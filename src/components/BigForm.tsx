@@ -47,6 +47,21 @@ const formSchema = z.object({
     phone: z.string().min(1, "Phone number is required"),
     address: z.string().min(1, "Address is required"),
     city: z.string().min(1, "City is required"),
+    dateOfBirth: z.date().optional(),
+    socialSecurityNumber: z.string().optional(),
+    occupation: z.string().optional(),
+    employerName: z.string().optional(),
+    nationality: z.string().optional(),
+    taxId: z.string().optional(),
+    maritalStatus: z.string().optional(),
+    dependents: z.string().optional(),
+  }),
+  previousDetails: z.object({
+    previousAddress1: z.string().optional(),
+    previousAddress2: z.string().optional(),
+    previousCity: z.string().optional(),
+    previousFirstName: z.string().optional(),
+    previousLastName: z.string().optional(),
   }),
   selectChoices: z.object({
     category: z.string().min(1, "Category is required"),
@@ -54,6 +69,11 @@ const formSchema = z.object({
     product: z.string().min(1, "Product is required"),
     status: z.string().min(1, "Status is required"),
     priority: z.string().min(1, "Priority is required"),
+    department: z.string().optional(),
+    assignee: z.string().optional(),
+    region: z.string().optional(),
+    language: z.string().optional(),
+    paymentMethod: z.string().optional(),
   }),
   checkboxChoices: z.object({
     options: z.array(z.string()).refine((value) => value.length > 0, {
@@ -64,6 +84,11 @@ const formSchema = z.object({
   docIds: z.array(
     z.object({
       docId: z.string().min(1, "Document ID is required"),
+    })
+  ),
+  inflowDocIds: z.array(
+    z.object({
+      inflowDocId: z.string().min(1, "Inflow Document ID is required"),
     })
   ),
   additionalInfo: z.object({
@@ -91,6 +116,20 @@ const BigForm = () => {
         phone: "",
         address: "",
         city: "",
+        socialSecurityNumber: "",
+        occupation: "",
+        employerName: "",
+        nationality: "",
+        taxId: "",
+        maritalStatus: "",
+        dependents: "",
+      },
+      previousDetails: {
+        previousAddress1: "",
+        previousAddress2: "",
+        previousCity: "",
+        previousFirstName: "",
+        previousLastName: "",
       },
       selectChoices: {
         category: "",
@@ -98,12 +137,18 @@ const BigForm = () => {
         product: "",
         status: "",
         priority: "",
+        department: "",
+        assignee: "",
+        region: "",
+        language: "",
+        paymentMethod: "",
       },
       checkboxChoices: {
         options: [],
         otherComment: "",
       },
       docIds: [],
+      inflowDocIds: [],
       additionalInfo: {
         notes: "",
       },
@@ -122,10 +167,19 @@ const BigForm = () => {
   const priorityOptions = usePriorityOptions();
   const submitMutation = useSubmitForm();
   
-  // Field array for dynamic document IDs
+  // Field arrays for dynamic document IDs and inflow document IDs
   const { fields, append, remove } = useFieldArray({
     control,
     name: "docIds",
+  });
+  
+  const { 
+    fields: inflowFields, 
+    append: appendInflow, 
+    remove: removeInflow 
+  } = useFieldArray({
+    control,
+    name: "inflowDocIds",
   });
   
   // Handle check button for customer info
@@ -174,6 +228,15 @@ const BigForm = () => {
     }
   };
   
+  // Handle add inflow document ID button
+  const handleAddInflowDocId = () => {
+    if (inflowFields.length < 5) {
+      appendInflow({ inflowDocId: "" });
+    } else {
+      toast.error("Maximum of 5 inflow document IDs allowed");
+    }
+  };
+  
   // Form submission handler
   const onSubmit = (data: FormValues) => {
     console.log("Form submitted with data:", data);
@@ -187,6 +250,52 @@ const BigForm = () => {
       },
     });
   };
+  
+  // Mock options for select fields
+  const departmentOptions = [
+    { value: "sales", label: "Sales" },
+    { value: "marketing", label: "Marketing" },
+    { value: "support", label: "Support" },
+    { value: "engineering", label: "Engineering" },
+    { value: "finance", label: "Finance" },
+  ];
+  
+  const assigneeOptions = [
+    { value: "john", label: "John Doe" },
+    { value: "jane", label: "Jane Smith" },
+    { value: "bob", label: "Bob Johnson" },
+    { value: "alice", label: "Alice Williams" },
+  ];
+  
+  const regionOptions = [
+    { value: "na", label: "North America" },
+    { value: "eu", label: "Europe" },
+    { value: "asia", label: "Asia" },
+    { value: "sa", label: "South America" },
+    { value: "af", label: "Africa" },
+  ];
+  
+  const languageOptions = [
+    { value: "en", label: "English" },
+    { value: "es", label: "Spanish" },
+    { value: "fr", label: "French" },
+    { value: "de", label: "German" },
+    { value: "zh", label: "Chinese" },
+  ];
+  
+  const paymentMethodOptions = [
+    { value: "cc", label: "Credit Card" },
+    { value: "bank", label: "Bank Transfer" },
+    { value: "paypal", label: "PayPal" },
+    { value: "crypto", label: "Cryptocurrency" },
+  ];
+  
+  const maritalStatusOptions = [
+    { value: "single", label: "Single" },
+    { value: "married", label: "Married" },
+    { value: "divorced", label: "Divorced" },
+    { value: "widowed", label: "Widowed" },
+  ];
   
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -350,6 +459,245 @@ const BigForm = () => {
                 <p className="text-sm text-red-500 mt-1">{errors.personalInfo.city.message}</p>
               )}
             </div>
+            <div>
+              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Controller
+                name="personalInfo.dateOfBirth"
+                control={control}
+                render={({ field }) => (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value ? format(field.value, "PPP") : <span>Select date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        disabled={(date) => date > new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="ssn">Social Security Number</Label>
+              <Controller
+                name="personalInfo.socialSecurityNumber"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="ssn"
+                    placeholder="SSN"
+                    className="w-full"
+                    {...field}
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="occupation">Occupation</Label>
+              <Controller
+                name="personalInfo.occupation"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="occupation"
+                    placeholder="Occupation"
+                    className="w-full"
+                    {...field}
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="employerName">Employer Name</Label>
+              <Controller
+                name="personalInfo.employerName"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="employerName"
+                    placeholder="Employer Name"
+                    className="w-full"
+                    {...field}
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="nationality">Nationality</Label>
+              <Controller
+                name="personalInfo.nationality"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="nationality"
+                    placeholder="Nationality"
+                    className="w-full"
+                    {...field}
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="taxId">Tax ID</Label>
+              <Controller
+                name="personalInfo.taxId"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="taxId"
+                    placeholder="Tax ID"
+                    className="w-full"
+                    {...field}
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="maritalStatus">Marital Status</Label>
+              <Controller
+                name="personalInfo.maritalStatus"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select marital status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {maritalStatusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="dependents">Number of Dependents</Label>
+              <Controller
+                name="personalInfo.dependents"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="dependents"
+                    type="number"
+                    placeholder="Dependents"
+                    className="w-full"
+                    {...field}
+                  />
+                )}
+              />
+            </div>
+          </div>
+        </Card>
+        
+        {/* Previous Details Section */}
+        <Card className="form-section">
+          <h2 className="form-section-title">Previous Details</h2>
+          <div className="space-y-6">
+            <h3 className="text-md font-medium">Previous Address</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="previousAddress1">Previous Address Line 1</Label>
+                <Controller
+                  name="previousDetails.previousAddress1"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="previousAddress1"
+                      placeholder="Previous Address Line 1"
+                      className="w-full"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+              <div>
+                <Label htmlFor="previousAddress2">Previous Address Line 2</Label>
+                <Controller
+                  name="previousDetails.previousAddress2"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="previousAddress2"
+                      placeholder="Previous Address Line 2"
+                      className="w-full"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+              <div>
+                <Label htmlFor="previousCity">Previous City</Label>
+                <Controller
+                  name="previousDetails.previousCity"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="previousCity"
+                      placeholder="Previous City"
+                      className="w-full"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            
+            <Separator className="my-6" />
+            
+            <h3 className="text-md font-medium">Previous Name</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="previousFirstName">Previous First Name</Label>
+                <Controller
+                  name="previousDetails.previousFirstName"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="previousFirstName"
+                      placeholder="Previous First Name"
+                      className="w-full"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+              <div>
+                <Label htmlFor="previousLastName">Previous Last Name</Label>
+                <Controller
+                  name="previousDetails.previousLastName"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="previousLastName"
+                      placeholder="Previous Last Name"
+                      className="w-full"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+            </div>
           </div>
         </Card>
         
@@ -422,8 +770,6 @@ const BigForm = () => {
                 <p className="text-sm text-red-500 mt-1">{errors.selectChoices.subcategory.message}</p>
               )}
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <Label htmlFor="product" className="required-field">Product</Label>
               <Controller
@@ -513,6 +859,126 @@ const BigForm = () => {
               {errors.selectChoices?.priority && (
                 <p className="text-sm text-red-500 mt-1">{errors.selectChoices.priority.message}</p>
               )}
+            </div>
+            <div>
+              <Label htmlFor="department">Department</Label>
+              <Controller
+                name="selectChoices.department"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departmentOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="assignee">Assignee</Label>
+              <Controller
+                name="selectChoices.assignee"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select assignee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assigneeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="region">Region</Label>
+              <Controller
+                name="selectChoices.region"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regionOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="language">Language</Label>
+              <Controller
+                name="selectChoices.language"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languageOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div>
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Controller
+                name="selectChoices.paymentMethod"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethodOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
           </div>
         </Card>
@@ -620,6 +1086,61 @@ const BigForm = () => {
           
           {fields.length === 0 && (
             <p className="text-sm text-gray-400 italic">No document IDs added yet</p>
+          )}
+        </Card>
+        
+        {/* Inflow Document ID Section */}
+        <Card className="form-section">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="form-section-title mb-0 pb-0 border-0">Inflow Document IDs</h2>
+            <Button 
+              type="button" 
+              onClick={handleAddInflowDocId} 
+              disabled={inflowFields.length >= 5}
+              variant="outline"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Inflow Document
+            </Button>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Add up to 5 inflow document IDs (all are required if added)
+          </p>
+          
+          {inflowFields.map((field, index) => (
+            <div key={field.id} className="doc-field">
+              <div className="flex-grow">
+                <Label htmlFor={`inflowDocId-${index}`} className="required-field">Inflow Document ID {index + 1}</Label>
+                <Controller
+                  name={`inflowDocIds.${index}.inflowDocId`}
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id={`inflowDocId-${index}`}
+                      placeholder={`Enter Inflow Document ID ${index + 1}`}
+                      className="w-full"
+                      {...field}
+                    />
+                  )}
+                />
+                {errors.inflowDocIds?.[index]?.inflowDocId && (
+                  <p className="text-sm text-red-500 mt-1">{errors.inflowDocIds[index]?.inflowDocId?.message}</p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="mt-8"
+                onClick={() => removeInflow(index)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          
+          {inflowFields.length === 0 && (
+            <p className="text-sm text-gray-400 italic">No inflow document IDs added yet</p>
           )}
         </Card>
         

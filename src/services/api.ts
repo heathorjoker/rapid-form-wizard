@@ -18,6 +18,15 @@ const fetchCustomerInfo = async (customerId: string) => {
     phone: `555-123-${customerId}`,
     address: "123 Main St",
     city: "Anytown",
+    // Additional mock fields
+    occupation: "Software Developer",
+    employerName: "Tech Corp",
+    nationality: "USA",
+    socialSecurityNumber: "XXX-XX-" + customerId,
+    taxId: "TID-" + customerId,
+    maritalStatus: "single",
+    dependents: "2",
+    // Date of birth not included as it's a Date object and would need special handling
   };
 };
 
